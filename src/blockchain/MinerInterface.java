@@ -16,9 +16,9 @@ public interface MinerInterface {
     // we might need human readable names
     double getBalance(Key userPublicKey) throws RemoteException;
     // return true if successful
-    boolean sendMoney(Key senderPublicKey, byte[] message);
+    boolean sendMoney(Key senderPublicKey, byte[] message) throws RemoteException ;
     // just for demos, a method to initialize an account with some money
-    double register(Key senderPublicKey, double initialBalance);
+    boolean register(Key senderPublicKey, double initialBalance) throws RemoteException ;
     // return true if block is accepted
-    boolean newBlockAnnouncement(Block block);
+    boolean newBlockAnnouncement(Block block) throws RemoteException ;
 }
