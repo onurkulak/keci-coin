@@ -6,6 +6,7 @@
 package blockchain;
 
 import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
@@ -20,6 +21,8 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 
@@ -149,7 +152,20 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     }
     
     private void announceNewBlock() {
-        
+        Miner temp;
+        for(String minerName: knownMiners)
+        {
+            try {
+                temp = (Miner)Naming.lookup(minerName);
+                temp.newBlockAnnouncement(lastBlock, ID);
+            } catch (NotBoundException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (RemoteException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
     
