@@ -150,7 +150,6 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             newBlock.previousBlock = lastBlock;
             newBlock.transactions = pendingTransactions;
             if(createBlockHash(newBlock)){
-                newBlock.previousBlock = lastBlock;
                 lastBlock = newBlock;
                 announceNewBlock();
                 reset();

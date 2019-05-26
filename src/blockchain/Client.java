@@ -13,9 +13,5 @@ package blockchain;
  * 
  */
 public class Client {
-    // just to make sure client is separately run from miners
-    // initialization and other stuff are done here
-    public static void main(){
-        
-    }
+    
 }
