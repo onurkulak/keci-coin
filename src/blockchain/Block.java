@@ -6,6 +6,7 @@
 package blockchain;
 
 // not sure whether the hash result is actually a key..
+import java.math.BigInteger;
 import java.util.Date;
 /**
  *
@@ -13,9 +14,10 @@ import java.util.Date;
  */
 public class Block {
     Block previousBlock;
+    static final int DIFFICULTY = 4;
     static final int SIZE = 4;
     // not sure about the type, sha256 seems to return an int
-    int hash;
+    BigInteger hash;
     
     // this part can be changed, Sami's part
     int randomNonce;

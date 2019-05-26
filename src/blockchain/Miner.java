@@ -5,6 +5,8 @@
  */
 package blockchain;
 
+import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
@@ -19,6 +21,9 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 
 /**
@@ -117,17 +122,69 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     //return false if another miner finds and notifies by changing volatile value 
     // should set hash, nonce, and creation date for the block
     private boolean createBlockHash(Block b){
-        return true;
+        boolean successful = false;
+        String base = "";
+        String withDate = "";
+          for( int i = 0; i < Block.SIZE; i++){
+              base = base + b.transactions[i].toString();
+          }
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            while ( !successful && !hashFoundBySomeoneElse )
+            {
+              b.creationDate = new Date(System.currentTimeMillis());
+              withDate = base + b.creationDate.toString();
+              for( b.randomNonce = 0; b.randomNonce < 100000; b.randomNonce++)
+              {
+                b.hash = new BigInteger(1, md.digest((withDate+b.randomNonce).getBytes()));
+                    if( b.hash.getLowestSetBit() > Block.DIFFICULTY )
+                    {
+                       successful = true;
+                       break;
+                    }
+                    if( hashFoundBySomeoneElse ) break;
+                }
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return successful;
     }
     
     private void announceNewBlock() {
-        
+        Miner temp;
+        for(String minerName: knownMiners)
+        {
+            try {
+                temp = (Miner)Naming.lookup(minerName);
+                temp.newBlockAnnouncement(lastBlock, ID);
+            } catch (NotBoundException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (RemoteException ex) {
+                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
     
     // check if new block is valid, with all transactions and hashes. sami bunu sen yap
     private boolean checkValidity(Block block) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String hashinput = "";
+            for( int i = 0; i < Block.SIZE; i++){
+              hashinput = hashinput + block.transactions[i].toString();
+            }
+            hashinput = hashinput + block.creationDate;
+            if( block.hash.equals( new BigInteger(1, md.digest((hashinput+ block.randomNonce).getBytes())))  && block.hash.getLowestSetBit() > Block.DIFFICULTY )
+                return true;
+            
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
     }
 
     // called when someone else notifies for a new block
