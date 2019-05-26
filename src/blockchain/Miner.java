@@ -18,6 +18,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.ByteBuffer;
 
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
@@ -61,24 +62,30 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
 
     @Override
     public boolean sendMoney(PublicKey senderPublicKey, byte[] sign, byte[] message) throws RemoteException {
-        Signature verifier = null;
         try {
-            verifier = Signature.getInstance("SHA256withRSA");
+            Signature verifier = Signature.getInstance("SHA256withRSA");
             verifier.initVerify(senderPublicKey);
             verifier.update(message);
-            // sign is incorrect
-            if(!verifier.verify(sign))
-                return false;
-            else{
+            // sign is correct
+            if(verifier.verify(sign)){
                 int publicKeyByteSize = message.length - 8;
                 byte[] encodedPublicKey = new byte[publicKeyByteSize];
-                for(int i = 0; i < encodedPublicKey.length; i++)
-                    encodedPublicKey[i] = message[i];
-                PublicKey receiver = 
-                    KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedPublicKey));
+                byte[] encodedAmount = new byte[8];
+                System.arraycopy(message, 0, encodedPublicKey, 0, encodedPublicKey.length);
+                System.arraycopy(message, encodedPublicKey.length, encodedAmount, 0, 8);
                 
+                PublicKey receiver =  KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedPublicKey));
+                double amount = ByteBuffer.wrap(encodedAmount).getDouble();
+                if(getBalance(senderPublicKey)>=amount){
+                    Transaction transaction = new Transaction();
+                    transaction.amount = amount;
+                    transaction.receiver = receiver;
+                    transaction.sender = senderPublicKey;
+                    transaction.date = new Date();
+                    addTransaction(transaction);
+                    return true;
+                }
             }
-            
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvalidKeyException ex) {
@@ -88,7 +95,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         } catch (InvalidKeySpecException ex) {
             Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        return false;
     }
 
     @Override
