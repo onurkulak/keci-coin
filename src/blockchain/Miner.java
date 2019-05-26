@@ -29,6 +29,7 @@ import java.util.ArrayList;
  */
 public class Miner extends UnicastRemoteObject implements MinerInterface{
     
+    PublicKey ID;
     Block lastBlock;
     Transaction[] pendingTransactions;
     int pendingCntr;
@@ -172,16 +173,25 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
 
     // called when someone else notifies for a new block
     @Override
-    public boolean newBlockAnnouncement(Block block) throws RemoteException {
+    public boolean newBlockAnnouncement(Block block, PublicKey minerID) throws RemoteException {
         if(checkValidity(block))
         {
             hashFoundBySomeoneElse = true;
             block.previousBlock = lastBlock;
             lastBlock = block;
             reset();
+            giveMiningReward(minerID, block);
             return true;
         }
         else return false;
+    }
+
+    private void giveMiningReward(PublicKey minerID, Block block) {
+        Transaction miningReward = new Transaction();
+        miningReward.receiver = minerID;
+        miningReward.amount = 1;
+        miningReward.date = block.creationDate;
+        addTransaction(miningReward);
     }
 
     private void addTransaction(Transaction t) {
@@ -191,10 +201,10 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             newBlock.previousBlock = lastBlock;
             newBlock.transactions = pendingTransactions;
             if(createBlockHash(newBlock)){
-                newBlock.previousBlock = lastBlock;
                 lastBlock = newBlock;
                 announceNewBlock();
                 reset();
+                giveMiningReward(ID, lastBlock);
             }
         }
     }
