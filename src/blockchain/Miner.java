@@ -130,7 +130,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
           }
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            while ( !successful && !hashFoundBySomeoneElse )
+            while ( !successful )
             {
               b.creationDate = new Date(System.currentTimeMillis());
               withDate = base + b.creationDate.toString();
@@ -142,7 +142,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
                        successful = true;
                        break;
                     }
-                    if( hashFoundBySomeoneElse ) break;
+                    if( hashFoundBySomeoneElse ) return false;
                 }
             }
         } catch (NoSuchAlgorithmException ex) {
