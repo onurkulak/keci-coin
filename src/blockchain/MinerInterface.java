@@ -21,5 +21,5 @@ public interface MinerInterface {
     // just for demos, a method to initialize an account with some money
     boolean register(PublicKey senderPublicKey, double initialBalance) throws RemoteException ;
     // return true if block is accepted
-    boolean newBlockAnnouncement(Block block) throws RemoteException ;
+    boolean newBlockAnnouncement(Block block, PublicKey miner) throws RemoteException ;
 }
