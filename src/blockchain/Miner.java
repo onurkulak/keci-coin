@@ -31,16 +31,16 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     Block lastBlock;
     Transaction[] pendingTransactions;
     int pendingCntr;
-    volatile boolean hashFoundBySomeoneElse;
+    volatile boolean hashFoundBySomeoneElse, hashFoundByMe;
     ArrayList<String> knownMiners;
     
-    protected Miner() throws RemoteException {
+    public Miner(PublicKey ID) throws RemoteException {
         super();
         pendingTransactions = new Transaction[Block.SIZE];
         pendingCntr = 0;
         lastBlock = null;
         hashFoundBySomeoneElse = false;
-        knownMiners = new ArrayList<>();
+        this.ID = ID;
     }
     
     @Override
@@ -100,14 +100,14 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     }
 
     @Override
-    public boolean register(PublicKey senderPublicKey, double initialBalance)throws RemoteException  {
+    public boolean register(PublicKey senderPublicKey, double initialBalance, Date timeStamp)throws RemoteException  {
         if(getBalance(senderPublicKey) != 0)
             return false;
         else{
             Transaction t = new Transaction();
             t.receiver = senderPublicKey;
             t.amount = initialBalance;
-            t.date = new Date();
+            t.date = timeStamp;
             addTransaction(t);
             return true;
         }
@@ -133,7 +133,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     // called when someone else notifies for a new block
     @Override
     public boolean newBlockAnnouncement(Block block, PublicKey minerID) throws RemoteException {
-        if(checkValidity(block))
+        if(!hashFoundBySomeoneElse && !hashFoundByMe && checkValidity(block))
         {
             hashFoundBySomeoneElse = true;
             block.previousBlock = lastBlock;
@@ -159,7 +159,8 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             Block newBlock = new Block();
             newBlock.previousBlock = lastBlock;
             newBlock.transactions = pendingTransactions;
-            if(createBlockHash(newBlock)){
+            if(createBlockHash(newBlock) && checkValidity(newBlock)){
+                hashFoundByMe = true;
                 lastBlock = newBlock;
                 announceNewBlock();
                 reset();
@@ -171,6 +172,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     private void reset() {
         pendingTransactions = new Transaction[Block.SIZE];
         pendingCntr = 0;
-        hashFoundBySomeoneElse = false;    
+        hashFoundBySomeoneElse = false;
+        hashFoundByMe = false;
     }
 }

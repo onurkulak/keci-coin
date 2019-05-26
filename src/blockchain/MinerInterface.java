@@ -8,6 +8,7 @@ package blockchain;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
+import java.util.Date;
 /**
  *
  * @author onur
@@ -19,7 +20,7 @@ public interface MinerInterface {
     // message array has the format: include receiver public key followed by a double amont
     boolean sendMoney(PublicKey senderPublicKey, byte[] sign, byte[] message) throws RemoteException ;
     // just for demos, a method to initialize an account with some money
-    boolean register(PublicKey senderPublicKey, double initialBalance) throws RemoteException ;
+    boolean register(PublicKey senderPublicKey, double initialBalance, Date d) throws RemoteException ;
     // return true if block is accepted
     boolean newBlockAnnouncement(Block block, PublicKey miner) throws RemoteException ;
 }
