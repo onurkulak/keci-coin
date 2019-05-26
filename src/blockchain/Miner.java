@@ -197,13 +197,13 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             block.previousBlock = lastBlock;
             lastBlock = block;
             reset();
-            giveMiningReward(minerID, block);
+            giveMiningReward(minerID);
             return true;
         }
         else return false;
     }
 
-    private void giveMiningReward(PublicKey minerID, Block block) {
+    private void giveMiningReward(PublicKey minerID) {
         Transaction miningReward = new Transaction();
         miningReward.receiver = minerID;
         miningReward.amount = 1;
@@ -222,7 +222,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
                 lastBlock = newBlock;
                 announceNewBlock();
                 reset();
-                giveMiningReward(ID, lastBlock);
+                giveMiningReward(ID);
             }
         }
     }
