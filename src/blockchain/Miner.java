@@ -5,6 +5,7 @@
  */
 package blockchain;
 
+import java.math.BigInteger;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
@@ -19,6 +20,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
@@ -116,7 +118,34 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     //return false if another miner finds and notifies by changing volatile value 
     // should set hash, nonce, and creation date for the block
     private boolean createBlockHash(Block b){
-        return true;
+        boolean successful = false;
+        String base = "";
+        String withDate = "";
+          for( int i = 0; i < Block.SIZE; i++){
+              base = base + b.transactions[i].toString();
+          }
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            while ( !successful && !hashFoundBySomeoneElse )
+            {
+              b.creationDate = new Date(System.currentTimeMillis());
+              withDate = base + b.creationDate.toString();
+              for( b.randomNonce = 0; b.randomNonce < 100000; b.randomNonce++)
+              {
+                b.hash = new BigInteger(1, md.digest((withDate+b.randomNonce).getBytes()));
+                    if( b.hash.getLowestSetBit() > Block.DIFFICULTY )
+                    {
+                       successful = true;
+                       break;
+                    }
+                    if( hashFoundBySomeoneElse ) break;
+                }
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if( successful ) announceNewBlock();
+        return successful;
     }
     
     private void announceNewBlock() {
