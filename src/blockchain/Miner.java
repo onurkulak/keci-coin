@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
@@ -30,9 +31,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     Transaction[] pendingTransactions;
     int pendingCntr;
     volatile boolean hashFoundBySomeoneElse;
-    public static void main(String[] args){
-        
-    }
+    ArrayList<String> knownMiners;
     
     protected Miner() throws RemoteException {
         super();
@@ -40,6 +39,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         pendingCntr = 0;
         lastBlock = null;
         hashFoundBySomeoneElse = false;
+        knownMiners = new ArrayList<>();
     }
     
     @Override
