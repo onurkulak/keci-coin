@@ -233,4 +233,13 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         hashFoundBySomeoneElse = false;
         hashFoundByMe = false;
     }
+
+    @Override
+    public int getChainLength() throws RemoteException {
+        int length = 0;
+        for(Block cb = lastBlock; cb != null; cb = cb.previousBlock){
+            length++;
+        }
+        return length;
+    }
 }

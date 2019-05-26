@@ -23,4 +23,5 @@ public interface MinerInterface {
     boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime) throws RemoteException ;
     // return true if block is accepted
     boolean newBlockAnnouncement(Block block, PublicKey miner) throws RemoteException ;
+    int getChainLength() throws RemoteException ;
 }
