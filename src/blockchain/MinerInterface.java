@@ -20,7 +20,7 @@ public interface MinerInterface {
     // message array has the format: include receiver public key followed by a double amont
     boolean sendMoney(PublicKey senderPublicKey, byte[] sign, byte[] message) throws RemoteException ;
     // just for demos, a method to initialize an account with some money
-    boolean register(PublicKey senderPublicKey, double initialBalance, Date d) throws RemoteException ;
+    boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime) throws RemoteException ;
     // return true if block is accepted
     boolean newBlockAnnouncement(Block block, PublicKey miner) throws RemoteException ;
 }

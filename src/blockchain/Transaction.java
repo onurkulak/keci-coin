@@ -15,7 +15,7 @@ import java.util.Base64;
 public class Transaction {
     PublicKey sender, receiver;
     double amount;
-    Date date;
+    byte logicalDate;
     
     public String toString(){
         String senderString = Base64.getEncoder().encodeToString(sender.getEncoded());

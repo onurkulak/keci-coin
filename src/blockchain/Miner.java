@@ -74,11 +74,11 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             verifier.update(message);
             // sign is correct
             if(verifier.verify(sign)){
-                int publicKeyByteSize = message.length - 8;
+                int publicKeyByteSize = message.length - 9;
                 byte[] encodedPublicKey = new byte[publicKeyByteSize];
                 byte[] encodedAmount = new byte[8];
                 System.arraycopy(message, 0, encodedPublicKey, 0, encodedPublicKey.length);
-                System.arraycopy(message, encodedPublicKey.length, encodedAmount, 0, 8);
+                System.arraycopy(message, publicKeyByteSize, encodedAmount, 0, 8);
                 
                 PublicKey receiver =  KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedPublicKey));
                 double amount = ByteBuffer.wrap(encodedAmount).getDouble();
@@ -87,7 +87,8 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
                     transaction.amount = amount;
                     transaction.receiver = receiver;
                     transaction.sender = senderPublicKey;
-                    transaction.date = new Date();
+                    // get date from sender
+                    transaction.logicalDate = message[message.length-1];
                     addTransaction(transaction);
                     return true;
                 }
@@ -105,14 +106,14 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     }
 
     @Override
-    public boolean register(PublicKey senderPublicKey, double initialBalance, Date timeStamp)throws RemoteException  {
+    public boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime)throws RemoteException  {
         if(getBalance(senderPublicKey) != 0)
             return false;
         else{
             Transaction t = new Transaction();
             t.receiver = senderPublicKey;
             t.amount = initialBalance;
-            t.date = timeStamp;
+            t.logicalDate = logicalTime;
             addTransaction(t);
             return true;
         }
@@ -206,7 +207,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         Transaction miningReward = new Transaction();
         miningReward.receiver = minerID;
         miningReward.amount = 1;
-        miningReward.date = block.creationDate;
+        miningReward.logicalDate = 0;
         addTransaction(miningReward);
     }
 
