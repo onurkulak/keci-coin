@@ -6,13 +6,13 @@
 package blockchain;
 
 import java.util.Date;
-import java.security.Key;
+import java.security.PublicKey;
 /**
  *
  * @author onur
  */
 public class Transaction {
-    Key sender, receiver;
+    PublicKey sender, receiver;
     double amount;
     Date date;
 }

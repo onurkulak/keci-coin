@@ -7,8 +7,17 @@ package blockchain;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.Key;
+import java.security.InvalidKeyException;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
@@ -19,7 +28,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     Block lastBlock;
     Transaction[] pendingTransactions;
     int pendingCntr;
-    
+    volatile boolean hashFoundBySomeoneElse;
     public static void main(String[] args){
         
     }
@@ -29,10 +38,11 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         pendingTransactions = new Transaction[Block.SIZE];
         pendingCntr = 0;
         lastBlock = null;
+        hashFoundBySomeoneElse = false;
     }
     
     @Override
-    public double getBalance(Key userPublicKey) throws RemoteException {
+    public double getBalance(PublicKey userPublicKey) throws RemoteException {
         double balance = 0;
         for(int i = 0; i < pendingCntr; i++)
             if(pendingTransactions[i].receiver.equals(userPublicKey))
@@ -50,12 +60,39 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     }
 
     @Override
-    public boolean sendMoney(Key senderPublicKey, byte[] message) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean sendMoney(PublicKey senderPublicKey, byte[] sign, byte[] message) throws RemoteException {
+        Signature verifier = null;
+        try {
+            verifier = Signature.getInstance("SHA256withRSA");
+            verifier.initVerify(senderPublicKey);
+            verifier.update(message);
+            // sign is incorrect
+            if(!verifier.verify(sign))
+                return false;
+            else{
+                int publicKeyByteSize = message.length - 8;
+                byte[] encodedPublicKey = new byte[publicKeyByteSize];
+                for(int i = 0; i < encodedPublicKey.length; i++)
+                    encodedPublicKey[i] = message[i];
+                PublicKey receiver = 
+                    KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedPublicKey));
+                
+            }
+            
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidKeyException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SignatureException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidKeySpecException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
     }
 
     @Override
-    public boolean register(Key senderPublicKey, double initialBalance)throws RemoteException  {
+    public boolean register(PublicKey senderPublicKey, double initialBalance)throws RemoteException  {
         if(getBalance(senderPublicKey) != 0)
             return false;
         else{
@@ -68,24 +105,55 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         }
     }
     
-    private void createBlockHash(Block b){
-        
+    // returns true if finds a hash, 
+    //return false if another miner finds and notifies by changing volatile value 
+    // should set hash, nonce, and creation date for the block
+    private boolean createBlockHash(Block b){
+        return true;
     }
     
     private void announceNewBlock() {
         
     }
+    
+    
+    // check if new block is valid, with all transactions and hashes. sami bunu sen yap
+    private boolean checkValidity(Block block) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     // called when someone else notifies for a new block
     @Override
     public boolean newBlockAnnouncement(Block block) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if(checkValidity(block))
+        {
+            hashFoundBySomeoneElse = true;
+            block.previousBlock = lastBlock;
+            lastBlock = block;
+            reset();
+            return true;
+        }
+        else return false;
     }
 
     private void addTransaction(Transaction t) {
         pendingTransactions[pendingCntr++] = t;
         if(pendingCntr == pendingTransactions.length){
-            
+            Block newBlock = new Block();
+            newBlock.previousBlock = lastBlock;
+            newBlock.transactions = pendingTransactions;
+            if(createBlockHash(newBlock)){
+                newBlock.previousBlock = lastBlock;
+                lastBlock = newBlock;
+                announceNewBlock();
+                reset();
+            }
         }
+    }
+
+    private void reset() {
+        pendingTransactions = new Transaction[Block.SIZE];
+        pendingCntr = 0;
+        hashFoundBySomeoneElse = false;    
     }
 }

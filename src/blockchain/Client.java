@@ -8,6 +8,9 @@ package blockchain;
 /**
  *
  * @esra will take care of this part :d
+ * use Signature.getInstance("SHA256withRSA")
+ * 
+ * 
  */
 public class Client {
     // just to make sure client is separately run from miners
