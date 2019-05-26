@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
@@ -32,9 +33,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     Transaction[] pendingTransactions;
     int pendingCntr;
     volatile boolean hashFoundBySomeoneElse;
-    public static void main(String[] args){
-        
-    }
+    ArrayList<String> knownMiners;
     
     protected Miner() throws RemoteException {
         super();
@@ -42,6 +41,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         pendingCntr = 0;
         lastBlock = null;
         hashFoundBySomeoneElse = false;
+        knownMiners = new ArrayList<>();
     }
     
     @Override
@@ -144,7 +144,6 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
         }
-        if( successful ) announceNewBlock();
         return successful;
     }
     
@@ -155,7 +154,20 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     
     // check if new block is valid, with all transactions and hashes. sami bunu sen yap
     private boolean checkValidity(Block block) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String hashinput = "";
+            for( int i = 0; i < Block.SIZE; i++){
+              hashinput = hashinput + block.transactions[i].toString();
+            }
+            hashinput = hashinput + block.creationDate;
+            if( block.hash.equals( new BigInteger(1, md.digest((hashinput+ block.randomNonce).getBytes())))  && block.hash.getLowestSetBit() > Block.DIFFICULTY )
+                return true;
+            
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
     }
 
     // called when someone else notifies for a new block

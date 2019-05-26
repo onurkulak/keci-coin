@@ -7,6 +7,7 @@ package blockchain;
 
 import java.util.Date;
 import java.security.PublicKey;
+import java.util.Base64;
 /**
  *
  * @author onur
@@ -15,4 +16,10 @@ public class Transaction {
     PublicKey sender, receiver;
     double amount;
     Date date;
+    
+    public String toString(){
+        String senderString = Base64.getEncoder().encodeToString(sender.getEncoded());
+        String rcvString = Base64.getEncoder().encodeToString(receiver.getEncoded());
+        return "Amount:\t" + amount + "\nFrom:\t" + senderString + "\nTo:\t" + rcvString;
+    }
 }
