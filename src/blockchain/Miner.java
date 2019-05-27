@@ -25,7 +25,8 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-
+import java.rmi.*;
+import java.rmi.registry.*;
 /**
  * assume miners are completely separate entities from clients, they don't make transactions
  * @author onur
@@ -38,7 +39,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     int pendingCntr;
     volatile boolean hashFoundBySomeoneElse, hashFoundByMe;
     ArrayList<String> knownMiners;
-    
+    Registry reg;
     public Miner(PublicKey ID) throws RemoteException {
         super();
         pendingTransactions = new Transaction[Block.SIZE];
@@ -46,16 +47,39 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         lastBlock = null;
         hashFoundBySomeoneElse = false;
         this.ID = ID;
+        reg = LocateRegistry.getRegistry(2323);
+        try{
+        MinerInterface temp = (MinerInterface) reg.lookup("globalMiner");
+       
+            MinerInterface m2;
+            knownMiners = temp.getknownMiners();
+            for(String minerName: knownMiners)
+            {
+                m2 = (MinerInterface) reg.lookup(minerName);
+                m2.addMiner(ID.toString());
+            }
+            knownMiners.add(ID.toString());
+            reg.rebind(ID.toString() , this  );
+            
+        }catch(Exception e){
+            reg.rebind("globalMiner" , this);
+            knownMiners = new ArrayList<String>();
+            knownMiners.add("globalMiner");
+            System.out.println("I'm the first!!");
+        }
     }
     
     @Override
     public double getBalance(PublicKey userPublicKey) throws RemoteException {
         double balance = 0;
+        System.out.println("SOO");
         for(int i = 0; i < pendingCntr; i++)
             if(pendingTransactions[i].receiver.equals(userPublicKey))
                 balance += pendingTransactions[i].amount;
-            else if(pendingTransactions[i].sender.equals(userPublicKey))
+            else if( pendingTransactions[i].sender != null && pendingTransactions[i].sender.equals(userPublicKey))
                 balance -= pendingTransactions[i].amount;
+        
+        System.out.println("FOO");
         for(Block cb = lastBlock; cb != null; cb = cb.previousBlock){
             for(Transaction t: cb.transactions)
                 if(t.receiver.equals(userPublicKey))
@@ -107,6 +131,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
 
     @Override
     public boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime)throws RemoteException  {
+        //System.out.println("ASDASDASDADSA");
         if(getBalance(senderPublicKey) != 0)
             return false;
         else{
@@ -157,14 +182,10 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
         for(String minerName: knownMiners)
         {
             try {
-                temp = (Miner)Naming.lookup(minerName);
+                temp = (Miner)reg.lookup(minerName);
                 temp.newBlockAnnouncement(lastBlock, ID);
-            } catch (NotBoundException ex) {
-                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (MalformedURLException ex) {
-                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (RemoteException ex) {
-                Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception ex) {
+                //Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -241,5 +262,13 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             length++;
         }
         return length;
+    }
+    
+    public ArrayList<String> getknownMiners() throws RemoteException{
+        return knownMiners;
+    }
+    
+    public void addMiner( String name) throws RemoteException{
+        knownMiners.add(name);
     }
 }

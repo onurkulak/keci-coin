@@ -9,11 +9,12 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.Date;
+import java.util.ArrayList;
 /**
  *
  * @author onur
  */
-public interface MinerInterface {
+public interface MinerInterface extends Remote {
     // we might need human readable names
     double getBalance(PublicKey userPublicKey) throws RemoteException;
     // return true if successful
@@ -23,5 +24,7 @@ public interface MinerInterface {
     boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime) throws RemoteException ;
     // return true if block is accepted
     boolean newBlockAnnouncement(Block block, PublicKey miner) throws RemoteException ;
-    int getChainLength() throws RemoteException ;
+    int getChainLength() throws RemoteException;
+    ArrayList<String> getknownMiners() throws RemoteException;
+    void addMiner( String name) throws RemoteException;
 }
