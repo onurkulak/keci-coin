@@ -91,26 +91,22 @@ public class Client{
     }
     
     //send money to another client
-    public void sendMoney( PublicKey receiverPublicKey, double transferAmount){
-        byte[] message = new byte[264];
-        byte[] keyBytes = ownKeyPair.getPublic().getEncoded();
-        for( int i = 0; i < 256; i++){
-            message[i] = keyBytes[i];
-        }
+    public void sendMoney( PublicKey receiverPublicKey, double transferAmount) throws SignatureException{
+        byte[] keyBytes = receiverPublicKey.getEncoded();
+        byte[] message = new byte[keyBytes.length+9];
+        System.arraycopy(keyBytes, 0, message, 0, keyBytes.length);
         
         byte[] doubleBytes = new byte[8];
         ByteBuffer.wrap(doubleBytes).putDouble(transferAmount);
-        for( int i = 256; i < 264; i++){
-            message[i] = doubleBytes[i-256];
-        }
-
+        System.arraycopy(doubleBytes, 0, message, keyBytes.length, 8);
+        
+        signature.update(message);
+        byte[] sign = signature.sign();
         MinerInterface temp;
         for( String minerName: knownMiners){
             try{
-                signature.update(message);
-                byte[] sign = signature.sign();
                 temp = (MinerInterface) reg.lookup(minerName);
-                temp.sendMoney( ownKeyPair.getPublic(), sign, message); //????
+                temp.sendMoney( ownKeyPair.getPublic(), sign, message);
             } catch( Exception e) {}            
         }
     }

@@ -17,8 +17,9 @@ public class Transaction {
     double amount;
     byte logicalDate;
     
+    @Override
     public String toString(){
-        String senderString = Base64.getEncoder().encodeToString(sender.getEncoded());
+        String senderString = sender == null ? "none" : Base64.getEncoder().encodeToString(sender.getEncoded());
         String rcvString = Base64.getEncoder().encodeToString(receiver.getEncoded());
         return "Amount:\t" + amount + "\nFrom:\t" + senderString + "\nTo:\t" + rcvString;
     }

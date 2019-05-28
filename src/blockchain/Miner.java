@@ -73,19 +73,22 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     public double getBalance(PublicKey userPublicKey) throws RemoteException {
         double balance = 0;
         System.out.println("SOO");
-        for(int i = 0; i < pendingCntr; i++)
+        for(int i = 0; i < pendingCntr; i++){
             if(pendingTransactions[i].receiver.equals(userPublicKey))
                 balance += pendingTransactions[i].amount;
-            else if( pendingTransactions[i].sender != null && pendingTransactions[i].sender.equals(userPublicKey))
+            if( pendingTransactions[i].sender != null && pendingTransactions[i].sender.equals(userPublicKey))
                 balance -= pendingTransactions[i].amount;
+        }
+            
         
-        System.out.println("FOO");
         for(Block cb = lastBlock; cb != null; cb = cb.previousBlock){
-            for(Transaction t: cb.transactions)
+            for(Transaction t: cb.transactions){
                 if(t.receiver.equals(userPublicKey))
                     balance += t.amount;
-                else if(t.sender.equals(userPublicKey))
+                if(t.sender!=null && t.sender.equals(userPublicKey))
                     balance -= t.amount;
+            }
+                
         }
         return balance;
     }
@@ -103,9 +106,9 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
                 byte[] encodedAmount = new byte[8];
                 System.arraycopy(message, 0, encodedPublicKey, 0, encodedPublicKey.length);
                 System.arraycopy(message, publicKeyByteSize, encodedAmount, 0, 8);
-                
                 PublicKey receiver =  KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedPublicKey));
                 double amount = ByteBuffer.wrap(encodedAmount).getDouble();
+                System.out.println("checking account");
                 if(getBalance(senderPublicKey)>=amount){
                     Transaction transaction = new Transaction();
                     transaction.amount = amount;
@@ -114,6 +117,7 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
                     // get date from sender
                     transaction.logicalDate = message[message.length-1];
                     addTransaction(transaction);
+                    System.out.println("transaction added");
                     return true;
                 }
             }
@@ -132,8 +136,9 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     @Override
     public boolean register(PublicKey senderPublicKey, double initialBalance, byte logicalTime)throws RemoteException  {
         //System.out.println("ASDASDASDADSA");
-        if(getBalance(senderPublicKey) != 0)
+        if(getBalance(senderPublicKey) != 0){
             return false;
+        }
         else{
             Transaction t = new Transaction();
             t.receiver = senderPublicKey;
@@ -173,6 +178,9 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
             }
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Miner.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if(successful){
+            System.out.println(b.hash + "  " + b.randomNonce);
         }
         return successful;
     }
@@ -233,8 +241,10 @@ public class Miner extends UnicastRemoteObject implements MinerInterface{
     }
 
     private void addTransaction(Transaction t) {
+        System.out.println(t);
         pendingTransactions[pendingCntr++] = t;
         if(pendingCntr == pendingTransactions.length){
+            System.out.println(pendingCntr);
             Block newBlock = new Block();
             newBlock.previousBlock = lastBlock;
             newBlock.transactions = pendingTransactions;

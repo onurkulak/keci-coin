@@ -90,12 +90,22 @@ public class Test{
                     PublicKey senderPublicKey = nameKey.get(sender).getPublic();
                     PublicKey receiverPublicKey = nameKey.get(receiver).getPublic();
                     Client c1 = nameClient.get(sender);
+                    if(c1 == null || receiverPublicKey == null)
+                    {
+                        System.out.println("one of the user names do not exist in the system");
+                        break;
+                    }
                     c1.sendMoney( receiverPublicKey, transferAmount);
                     break;
                 case "balance":
                     System.out.println( "Name: ");
                     String name2 = in.nextLine();
                     Client c2 = nameClient.get(name2);
+                    if(c2 == null)
+                    {
+                        System.out.println("user name does not exist in the system");
+                        break;
+                    }
                     double balance = c2.getBalance();
                     System.out.println( "Balance: " + balance);
                     break;
